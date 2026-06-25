@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理后台 - 在线授权</title>
+  <style>
+    :root {
+      --bg: #eef3f7; --panel: #ffffff; --line: #d5e1eb; --text: #162131;
+      --muted: #627487; --primary: #116fa6; --primary-dark: #0e5a88;
+      --danger: #bd2a20; --ok: #23866f;
+      --shadow: 0 14px 34px rgba(20, 43, 66, .10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      color: var(--text);
+      background: linear-gradient(180deg, #eaf2f7 0, #f7fafc 280px, var(--bg) 100%);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .topbar {
+      min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 0 22px; color: #fff;
+      background: linear-gradient(90deg, #183a55 0%, #146995 58%, #7b5b1b 100%);
+      box-shadow: 0 10px 28px rgba(14, 49, 77, .18);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border-radius: 8px; background: rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 19px; }
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+    .topbar-actions span { font-size: 13px; opacity: .85; }
+    .topbar-actions a, .topbar-actions button {
+      color: #fff; text-decoration: none; padding: 6px 12px;
+      border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: none; font: inherit;
+    }
+    .topbar-actions a:hover, .topbar-actions button:hover { background: rgba(255,255,255,.1); }
+
+    .shell { width: min(1200px, calc(100% - 32px)); margin: 18px auto 32px; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+    .tab {
+      padding: 10px 18px; cursor: pointer; font-weight: 700; font-size: 14px;
+      color: var(--muted); border-bottom: 2px solid transparent; user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .panel {
+      border: 1px solid var(--line); border-radius: 8px;
+      background: rgba(255,255,255,.94); box-shadow: var(--shadow); overflow-x: auto;
+    }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      min-height: 44px; padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff 0%, #f5f9fc 100%);
+    }
+    .panel-head h3 { margin: 0; font-size: 15px; }
+    .panel-body { padding: 0; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e3ebf2; font-size: 12px; }
+    th { color: #63788b; font-weight: 700; background: #f6f9fc; font-size: 11px; text-transform: uppercase; }
+    tr:hover td { background: #f7fbfe; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .badge.ok { background: #e9f7f2; color: #176b58; }
+    .badge.warn { background: #fff6df; color: #81560f; }
+    .badge.info { background: #eaf6fd; color: #155b84; }
+
+    .code { font-family: monospace; font-size: 11px; word-break: break-all; max-width: 250px; display: inline-block; }
+
+    .stats {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px;
+    }
+    .stat-card {
+      padding: 14px; border: 1px solid var(--line); border-radius: 8px;
+      background: #fff; text-align: center;
+    }
+    .stat-card .num { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;
+      cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--text);
+    }
+    .btn-sm:hover { border-color: var(--primary); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">影</div><h1>管理后台</h1></div>
+    <div class="topbar-actions">
+      <span id="userDisplay"></span>
+      <a href="/dashboard">返回控制台</a>
+      <a href="/">首页</a>
+      <button id="logoutBtn">退出</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="stats" id="statsRow">
+      <div class="stat-card"><div class="num" id="statUsers">-</div><div class="label">用户数</div></div>
+      <div class="stat-card"><div class="num" id="statMachines">-</div><div class="label">机器数</div></div>
+      <div class="stat-card"><div class="num" id="statLicenses">-</div><div class="label">授权数</div></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="users">用户管理</div>
+      <div class="tab" data-tab="licenses">授权管理</div>
+      <div class="tab" data-tab="machines">机器列表</div>
+    </div>
+
+    <div class="tab-content active" id="tab-users">
+      <div class="panel">
+        <div class="panel-head"><h3>所有用户</h3></div>
+        <div class="panel-body" id="usersBody"><p style="padding:20px;color:var(--muted)">加载中...</p></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-licenses">
+      <div class="panel">
+        <div class="panel-head"><h3>所有授权</h3></div>
+        <div class="panel-body" id="licensesBody"><p style="padding:20px;color:var(--muted)">加载中...</p></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-machines">
+      <div class="panel">
+        <div class="panel-head"><h3>所有机器</h3></div>
+        <div class="panel-body" id="machinesBody"><p style="padding:20px;color:var(--muted)">加载中...</p></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    async function api(url, opts={}) {
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+
+    async function checkAuth() {
+      try {
+        const data = await api('/api/status');
+        if (!data.logged_in || data.user.role !== 'admin') {
+          window.location.href = '/login';
+          return null;
+        }
+        $('userDisplay').textContent = `${data.user.display_name || data.user.username} (管理员)`;
+        return data.user;
+      } catch(e) {
+        window.location.href = '/login';
+        return null;
+      }
+    }
+
+    $('logoutBtn').addEventListener('click', async () => {
+      await api('/api/logout', { method: 'POST' });
+      window.location.href = '/';
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        $(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    async function loadUsers() {
+      try {
+        const data = await api('/api/admin/users');
+        let html = '<table><thead><tr><th>ID</th><th>用户名</th><th>姓名</th><th>单位</th><th>邮箱</th><th>角色</th><th>注册时间</th></tr></thead><tbody>';
+        for (const u of data.users) {
+          const roleBadge = u.role === 'admin' ? '<span class="badge ok">管理员</span>' : '<span class="badge info">用户</span>';
+          html += `<tr>
+            <td>${u.id}</td>
+            <td><strong>${u.username}</strong></td>
+            <td>${u.display_name || '-'}</td>
+            <td>${u.company || '-'}</td>
+            <td>${u.email || '-'}</td>
+            <td>${roleBadge}</td>
+            <td>${u.created_at ? u.created_at.substring(0,10) : '-'}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        $('usersBody').innerHTML = html;
+        $('statUsers').textContent = data.users.length;
+      } catch(e) {
+        $('usersBody').innerHTML = `<p style="padding:20px;color:var(--danger)">加载失败：${e.message}</p>`;
+      }
+    }
+
+    async function loadLicenses() {
+      try {
+        const data = await api('/api/admin/licenses');
+        let html = '<table><thead><tr><th>ID</th><th>用户</th><th>机器 ID</th><th>持有人</th><th>类型</th><th>生效</th><th>到期</th></tr></thead><tbody>';
+        for (const lic of data.licenses) {
+          const isLifetime = lic.is_lifetime || lic.license_type === 'lifetime';
+          const typeBadge = isLifetime ? '<span class="badge ok">终身</span>' : '<span class="badge info">定期</span>';
+          html += `<tr>
+            <td>${lic.id}</td>
+            <td>${lic.username || ''}</td>
+            <td class="code">${lic.machine_id || ''}</td>
+            <td>${lic.owner || ''}</td>
+            <td>${typeBadge}</td>
+            <td>${lic.issued_at ? lic.issued_at.substring(0,10) : ''}</td>
+            <td>${isLifetime ? '终身有效' : (lic.expires_at ? lic.expires_at.substring(0,10) : '')}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        $('licensesBody').innerHTML = html;
+        $('statLicenses').textContent = data.licenses.length;
+      } catch(e) {
+        $('licensesBody').innerHTML = `<p style="padding:20px;color:var(--danger)">加载失败：${e.message}</p>`;
+      }
+    }
+
+    async function loadMachines() {
+      try {
+        const data = await api('/api/admin/machines');
+        let html = '<table><thead><tr><th>ID</th><th>用户</th><th>机器 ID</th><th>主机名</th><th>备注</th><th>注册时间</th></tr></thead><tbody>';
+        for (const m of data.machines) {
+          html += `<tr>
+            <td>${m.id}</td>
+            <td>${m.username || ''}</td>
+            <td class="code">${m.machine_id || ''}</td>
+            <td>${m.hostname || '-'}</td>
+            <td>${m.description || '-'}</td>
+            <td>${m.created_at ? m.created_at.substring(0,10) : ''}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        $('machinesBody').innerHTML = html;
+        $('statMachines').textContent = data.machines.length;
+      } catch(e) {
+        $('machinesBody').innerHTML = `<p style="padding:20px;color:var(--danger)">加载失败：${e.message}</p>`;
+      }
+    }
+
+    checkAuth().then(user => {
+      if (user) {
+        loadUsers();
+        loadLicenses();
+        loadMachines();
+      }
+    });
+  </script>
+</body>
+</html>

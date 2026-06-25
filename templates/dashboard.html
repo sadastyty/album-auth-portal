@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>控制台 - 在线授权</title>
+  <style>
+    :root {
+      --bg: #eef3f7; --panel: #ffffff; --line: #d5e1eb; --text: #162131;
+      --muted: #627487; --primary: #116fa6; --primary-dark: #0e5a88;
+      --danger: #bd2a20; --ok: #23866f; --warn: #b37618;
+      --shadow: 0 14px 34px rgba(20, 43, 66, .10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      color: var(--text);
+      background: linear-gradient(180deg, #eaf2f7 0, #f7fafc 280px, var(--bg) 100%);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .topbar {
+      min-height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      padding: 0 22px; color: #fff;
+      background: linear-gradient(90deg, #183a55 0%, #146995 58%, #7b5b1b 100%);
+      box-shadow: 0 10px 28px rgba(14, 49, 77, .18);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border-radius: 8px; background: rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 19px; }
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+    .topbar-actions span { font-size: 13px; opacity: .85; }
+    .topbar-actions a, .topbar-actions button {
+      color: #fff; text-decoration: none; padding: 6px 12px;
+      border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: none; font: inherit;
+    }
+    .topbar-actions a:hover, .topbar-actions button:hover { background: rgba(255,255,255,.1); }
+
+    .shell { width: min(1100px, calc(100% - 32px)); margin: 18px auto 32px; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+    .tab {
+      padding: 10px 18px; cursor: pointer; font-weight: 700; font-size: 14px;
+      color: var(--muted); border-bottom: 2px solid transparent; user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .panel {
+      border: 1px solid var(--line); border-radius: 8px;
+      background: rgba(255,255,255,.94); box-shadow: var(--shadow); overflow: hidden;
+    }
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      min-height: 44px; padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff 0%, #f5f9fc 100%);
+    }
+    .panel-head h3 { margin: 0; font-size: 15px; }
+    .panel-body { padding: 14px; }
+
+    .empty {
+      text-align: center; padding: 40px 20px; color: var(--muted);
+    }
+    .empty .big { font-size: 40px; margin-bottom: 10px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e3ebf2; font-size: 13px; }
+    th { color: #63788b; font-weight: 700; background: #f6f9fc; }
+    tr:hover td { background: #f7fbfe; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .badge.ok { background: #e9f7f2; color: #176b58; }
+    .badge.warn { background: #fff6df; color: #81560f; }
+    .badge.err { background: #fff5f4; color: var(--danger); }
+    .badge.info { background: #eaf6fd; color: #155b84; }
+
+    .code { font-family: monospace; font-size: 11px; word-break: break-all; max-width: 300px; display: inline-block; }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3);
+      justify-content: center; align-items: center; z-index: 100;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      width: min(100%, 480px); padding: 20px;
+      background: #fff; border-radius: 8px; box-shadow: 0 24px 64px rgba(0,0,0,.2);
+    }
+    .modal h3 { margin: 0 0 14px; }
+    .modal label { display: grid; gap: 6px; margin-top: 12px; font-size: 13px; font-weight: 700; color: #526a7e; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+      border-radius: 6px; font: inherit; font-size: 13px;
+    }
+    .modal textarea { min-height: 80px; font-family: monospace; font-size: 12px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .modal-actions button {
+      padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; border: none;
+    }
+    .modal-actions .primary { color: #fff; background: var(--primary); }
+    .modal-actions .primary:hover { background: var(--primary-dark); }
+    .modal-actions .secondary { color: var(--text); background: #f0f4f8; }
+    .modal-actions .secondary:hover { background: #e3ebf2; }
+
+    .msg {
+      margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; display: none;
+    }
+    .msg.success { display: block; background: #e9f7f2; color: #176b58; border: 1px solid #a8d7c8; }
+    .msg.error { display: block; background: #fff5f4; color: var(--danger); border: 1px solid #f0b8b2; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700;
+      cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--text);
+      text-decoration: none;
+    }
+    .btn:hover { border-color: var(--primary); }
+    .btn-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">影</div><h1>授权控制台</h1></div>
+    <div class="topbar-actions">
+      <span id="userDisplay"></span>
+      <a href="/">首页</a>
+      <button id="logoutBtn">退出</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="tabs">
+      <div class="tab active" data-tab="licenses">我的授权</div>
+      <div class="tab" data-tab="machines">我的机器</div>
+      <div class="tab" data-tab="generate">生成授权</div>
+    </div>
+
+    <!-- 我的授权 -->
+    <div class="tab-content active" id="tab-licenses">
+      <div class="panel">
+        <div class="panel-head"><h3>授权码列表</h3></div>
+        <div class="panel-body" id="licensesBody"><div class="empty"><div class="big">📜</div><p>加载中...</p></div></div>
+      </div>
+    </div>
+
+    <!-- 我的机器 -->
+    <div class="tab-content" id="tab-machines">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>已注册机器</h3>
+          <button class="btn btn-primary btn-sm" id="addMachineBtn">+ 注册机器</button>
+        </div>
+        <div class="panel-body" id="machinesBody"><div class="empty"><div class="big">💻</div><p>加载中...</p></div></div>
+      </div>
+    </div>
+
+    <!-- 生成授权 -->
+    <div class="tab-content" id="tab-generate">
+      <div class="panel">
+        <div class="panel-head"><h3>生成授权码</h3></div>
+        <div class="panel-body">
+          <p style="color:var(--muted);font-size:13px;margin:0 0 12px;">为已注册的机器生成授权码。首次授权自动赠送30天试用。</p>
+          <label style="display:grid;gap:6px;font-size:13px;font-weight:700;color:#526a7e;">
+            机器 ID
+            <select id="genMachineId" style="padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;"></select>
+          </label>
+          <label style="display:grid;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:#526a7e;">
+            授权类型
+            <select id="genLicenseType" style="padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;">
+              <option value="term">定期授权 (90天)</option>
+              <option value="lifetime">终身授权</option>
+            </select>
+          </label>
+          <label style="display:grid;gap:6px;margin-top:12px;font-size:13px;font-weight:700;color:#526a7e;">
+            持有人
+            <input type="text" id="genOwner" placeholder="授权持有人姓名">
+          </label>
+          <button class="btn btn-primary" id="genBtn" style="margin-top:14px;padding:8px 20px;">生成授权码</button>
+          <div id="genMsg" class="msg"></div>
+          <div id="genResult" style="display:none;margin-top:12px;">
+            <label style="font-size:13px;font-weight:700;color:#526a7e;">授权码</label>
+            <textarea id="genCode" readonly style="width:100%;min-height:80px;margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:6px;font-family:monospace;font-size:12px;resize:vertical;"></textarea>
+            <button class="btn" id="copyGenBtn" style="margin-top:6px;">📋 复制授权码</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 注册机器弹窗 -->
+  <div class="modal-overlay" id="machineModal">
+    <div class="modal">
+      <h3>注册机器</h3>
+      <label>机器 ID <input type="text" id="modalMachineId" placeholder="例如：HDYX-74C4-098E-3275-1111"></label>
+      <label>主机名 <input type="text" id="modalHostname" placeholder="电脑名称（选填）"></label>
+      <label>备注 <input type="text" id="modalDesc" placeholder="备注（选填）"></label>
+      <div id="modalMsg" class="msg"></div>
+      <div class="modal-actions">
+        <button class="secondary" id="modalCancel">取消</button>
+        <button class="primary" id="modalConfirm">注册</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    async function api(url, opts={}) {
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+
+    // ── 检查登录状态 ──
+    async function checkAuth() {
+      try {
+        const data = await api('/api/status');
+        if (!data.logged_in) { window.location.href = '/login'; return null; }
+        $('userDisplay').textContent = `${data.user.display_name || data.user.username} (${data.user.role})`;
+        if (data.user.role === 'admin') {
+          const adminTab = document.createElement('div');
+          adminTab.className = 'tab';
+          adminTab.dataset.tab = 'admin';
+          adminTab.textContent = '⚙ 管理';
+          document.querySelector('.tabs').appendChild(adminTab);
+          adminTab.addEventListener('click', () => {
+            if (confirm('前往管理后台？')) window.location.href = '/admin';
+          });
+        }
+        return data.user;
+      } catch(e) {
+        window.location.href = '/login';
+        return null;
+      }
+    }
+
+    // ── 退出 ──
+    $('logoutBtn').addEventListener('click', async () => {
+      await api('/api/logout', { method: 'POST' });
+      window.location.href = '/';
+    });
+
+    // ── Tab 切换 ──
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        $(`tab-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    // ── 加载授权列表 ──
+    async function loadLicenses() {
+      try {
+        const data = await api('/api/licenses');
+        const body = $('licensesBody');
+        if (!data.licenses || data.licenses.length === 0) {
+          body.innerHTML = '<div class="empty"><div class="big">📜</div><p>暂无授权码</p><p style="font-size:12px;">在"生成授权"页为你的机器生成授权码</p></div>';
+          return;
+        }
+        let html = '<table><thead><tr><th>机器 ID</th><th>类型</th><th>持有人</th><th>生效日</th><th>到期日</th><th>状态</th></tr></thead><tbody>';
+        for (const lic of data.licenses) {
+          const isLifetime = lic.is_lifetime || lic.license_type === 'lifetime';
+          const expiresAt = isLifetime ? '终身有效' : (lic.expires_at || '');
+          const status = isLifetime ? '<span class="badge ok">终身</span>' :
+            (lic.expires_at && new Date(lic.expires_at) < new Date() ? '<span class="badge err">已过期</span>' : '<span class="badge ok">有效</span>');
+          html += `<tr>
+            <td class="code">${lic.machine_id || ''}</td>
+            <td>${isLifetime ? '终身授权' : '定期授权'}</td>
+            <td>${lic.owner || ''}</td>
+            <td>${lic.issued_at ? lic.issued_at.substring(0,10) : ''}</td>
+            <td>${expiresAt.substring(0,10)}</td>
+            <td>${status}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        body.innerHTML = html;
+      } catch(e) {
+        $('licensesBody').innerHTML = `<div class="empty"><p style="color:var(--danger)">加载失败：${e.message}</p></div>`;
+      }
+    }
+
+    // ── 加载机器列表 ──
+    async function loadMachines() {
+      try {
+        const data = await api('/api/machines');
+        const body = $('machinesBody');
+        if (!data.machines || data.machines.length === 0) {
+          body.innerHTML = '<div class="empty"><div class="big">💻</div><p>还没注册机器</p><p style="font-size:12px;">点击右上角"注册机器"添加</p></div>';
+          return;
+        }
+        let html = '<table><thead><tr><th>机器 ID</th><th>主机名</th><th>备注</th><th>注册时间</th></tr></thead><tbody>';
+        for (const m of data.machines) {
+          html += `<tr>
+            <td class="code">${m.machine_id || ''}</td>
+            <td>${m.hostname || '-'}</td>
+            <td>${m.description || '-'}</td>
+            <td>${m.created_at ? m.created_at.substring(0,10) : ''}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+        body.innerHTML = html;
+      } catch(e) {
+        $('machinesBody').innerHTML = `<div class="empty"><p style="color:var(--danger)">加载失败：${e.message}</p></div>`;
+      }
+    }
+
+    // ── 机器弹窗 ──
+    $('addMachineBtn').addEventListener('click', () => {
+      $('machineModal').classList.add('open');
+      $('modalMachineId').value = '';
+      $('modalHostname').value = '';
+      $('modalDesc').value = '';
+      $('modalMsg').className = 'msg';
+    });
+    $('modalCancel').addEventListener('click', () => $('machineModal').classList.remove('open'));
+    $('modalConfirm').addEventListener('click', async () => {
+      const machineId = $('modalMachineId').value.trim();
+      const hostname = $('modalHostname').value.trim();
+      const desc = $('modalDesc').value.trim();
+      const msg = $('modalMsg');
+      msg.className = 'msg';
+      if (!machineId) { msg.textContent = '请输入机器 ID'; msg.className = 'msg error'; return; }
+      try {
+        await api('/api/machines/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ machine_id: machineId, hostname, description: desc })
+        });
+        msg.textContent = '注册成功'; msg.className = 'msg success';
+        $('machineModal').classList.remove('open');
+        loadMachines();
+        loadGenMachines();
+      } catch(e) {
+        msg.textContent = e.message; msg.className = 'msg error';
+      }
+    });
+
+    // ── 生成授权下拉 ──
+    async function loadGenMachines() {
+      try {
+        const data = await api('/api/machines');
+        const sel = $('genMachineId');
+        sel.innerHTML = '<option value="">选择机器...</option>';
+        if (data.machines) {
+          for (const m of data.machines) {
+            sel.innerHTML += `<option value="${m.machine_id}">${m.machine_id} ${m.hostname ? '· '+m.hostname : ''}</option>`;
+          }
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    // ── 生成授权 ──
+    $('genBtn').addEventListener('click', async () => {
+      const machineId = $('genMachineId').value;
+      const licenseType = $('genLicenseType').value;
+      const owner = $('genOwner').value.trim();
+      const msg = $('genMsg');
+      msg.className = 'msg';
+      $('genResult').style.display = 'none';
+
+      if (!machineId) { msg.textContent = '请选择机器'; msg.className = 'msg error'; return; }
+      try {
+        const data = await api('/api/licenses/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ machine_id: machineId, license_type: licenseType, owner })
+        });
+        $('genCode').value = data.license.license_code;
+        $('genResult').style.display = 'block';
+        msg.textContent = '✅ 授权码已生成';
+        msg.className = 'msg success';
+        loadLicenses();
+      } catch(e) {
+        msg.textContent = e.message; msg.className = 'msg error';
+      }
+    });
+
+    // ── 复制授权码 ──
+    $('copyGenBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText($('genCode').value);
+        $('copyGenBtn').textContent = '✅ 已复制';
+        setTimeout(() => $('copyGenBtn').textContent = '📋 复制授权码', 2000);
+      } catch(e) {
+        $('genCode').select();
+        document.execCommand('copy');
+      }
+    });
+
+    // ── 启动 ──
+    checkAuth().then(user => {
+      if (user) {
+        loadLicenses();
+        loadMachines();
+        loadGenMachines();
+        // 自动填入持有人
+        if (user.display_name) $('genOwner').value = user.display_name;
+      }
+    });
+  </script>
+</body>
+</html>

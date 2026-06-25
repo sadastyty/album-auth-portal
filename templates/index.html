@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>工程影像管理平台 - 在线授权</title>
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --panel: #ffffff;
+      --line: #d5e1eb;
+      --text: #162131;
+      --muted: #627487;
+      --primary: #116fa6;
+      --primary-dark: #0e5a88;
+      --danger: #bd2a20;
+      --ok: #23866f;
+      --shadow: 0 18px 42px rgba(20, 43, 66, .14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      color: var(--text);
+      background: linear-gradient(180deg, #eaf2f7 0, #f7fafc 280px, var(--bg) 100%);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .topbar {
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 22px;
+      color: #fff;
+      background: linear-gradient(90deg, #183a55 0%, #146995 58%, #7b5b1b 100%);
+      box-shadow: 0 10px 28px rgba(14, 49, 77, .18);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: 8px;
+      background: rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
+      font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 19px; }
+    .topbar-actions { display: flex; gap: 10px; align-items: center; }
+    .topbar-actions a {
+      color: #fff; text-decoration: none; padding: 6px 12px;
+      border-radius: 6px; font-size: 14px;
+    }
+    .topbar-actions a:hover { background: rgba(255,255,255,.1); }
+    .topbar-actions .btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 14px; border-radius: 6px;
+      font-size: 13px; font-weight: 700; text-decoration: none;
+    }
+    .btn-primary { color: #fff; background: var(--primary); border: none; cursor: pointer; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { color: #fff; border: 1px solid rgba(255,255,255,.35); }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+
+    .hero {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 40px 24px;
+    }
+    .hero-card {
+      width: min(100%, 900px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .hero-left {
+      padding: 40px 32px;
+      display: grid;
+      gap: 20px;
+      align-content: center;
+      background: linear-gradient(180deg, #f6fafd 0%, #edf4fa 100%);
+    }
+    .hero-left h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.3;
+    }
+    .hero-left p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    .hero-left .features {
+      display: grid;
+      gap: 10px;
+    }
+    .hero-left .feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+    }
+    .hero-left .feature .icon {
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 14px;
+    }
+    .hero-right {
+      padding: 40px 32px;
+      display: grid;
+      gap: 16px;
+      align-content: center;
+    }
+    .hero-right h3 { margin: 0; font-size: 20px; }
+    .hero-right p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .hero-right .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-right .actions a {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border-radius: 8px;
+      font-weight: 700; text-decoration: none;
+    }
+    .hero-right .actions a.primary {
+      color: #fff; background: var(--primary);
+    }
+    .hero-right .actions a.primary:hover { background: var(--primary-dark); }
+    .hero-right .actions a.secondary {
+      color: var(--text); border: 1px solid var(--line); background: #fff;
+    }
+    .hero-right .actions a.secondary:hover { border-color: var(--primary); }
+    .hero-right .tip {
+      padding: 10px 12px;
+      border: 1px solid #f0d6a5;
+      border-radius: 8px;
+      background: #fff9ec;
+      color: #8a4b12;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .quick-activate {
+      margin-top: 8px;
+      padding: 14px;
+      border: 1px solid #b9d7ed;
+      border-radius: 8px;
+      background: #eef7ff;
+    }
+    .quick-activate h4 { margin: 0 0 8px; font-size: 14px; }
+    .quick-activate .field { display: grid; gap: 6px; margin-bottom: 8px; }
+    .quick-activate label { font-size: 12px; font-weight: 700; color: #526a7e; }
+    .quick-activate input {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+      border-radius: 6px; font: inherit; font-size: 13px;
+    }
+    .quick-activate .msg {
+      margin-top: 8px; padding: 8px 10px;
+      border-radius: 6px; font-size: 13px; display: none;
+    }
+    .quick-activate .msg.success { display: block; background: #e9f7f2; color: #176b58; border: 1px solid #a8d7c8; }
+    .quick-activate .msg.error { display: block; background: #fff5f4; color: var(--danger); border: 1px solid #f0b8b2; }
+    .quick-activate .license-code {
+      margin-top: 8px; padding: 10px;
+      background: #fbfdff; border: 1px dashed #b9cde0; border-radius: 6px;
+      font-family: monospace; font-size: 12px; word-break: break-all;
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .hero-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">影</div>
+      <h1>工程影像管理平台</h1>
+    </div>
+    <div class="topbar-actions">
+      <a href="/login">登录</a>
+      <a href="/register" class="btn btn-outline">注册</a>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="hero-card">
+      <div class="hero-left">
+        <h2>在线授权中心</h2>
+        <p>为工程影像管理平台提供在线注册、机器绑定和授权码生成服务。</p>
+        <div class="features">
+          <div class="feature"><span class="icon">✓</span> 在线注册账号</div>
+          <div class="feature"><span class="icon">✓</span> 绑定机器 ID</div>
+          <div class="feature"><span class="icon">✓</span> 在线获取授权码</div>
+          <div class="feature"><span class="icon">✓</span> 授权记录可查</div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <h3>快速激活</h3>
+        <p>已有账号？输入机器 ID 和密码即可在线获取授权码。</p>
+
+        <div class="quick-activate">
+          <h4>在线激活授权</h4>
+          <div class="field">
+            <label>本机机器 ID</label>
+            <input type="text" id="activateMachineId" placeholder="例如：HDYX-74C4-098E-3275-1111">
+          </div>
+          <div class="field">
+            <label>用户名</label>
+            <input type="text" id="activateUsername" placeholder="注册时的用户名">
+          </div>
+          <div class="field">
+            <label>密码</label>
+            <input type="password" id="activatePassword" placeholder="登录密码">
+          </div>
+          <button class="btn-primary" id="activateBtn" style="width:100%;justify-content:center;padding:10px;font-size:14px">获取授权码</button>
+          <div id="activateMsg" class="msg"></div>
+          <div id="activateCode" class="license-code"></div>
+        </div>
+
+        <div class="actions">
+          <a href="/register" class="primary">注册新账号</a>
+          <a href="/login" class="secondary">登录管理</a>
+        </div>
+        <div class="tip">
+          💡 首次使用：注册账号 → 在本地软件「试用与授权」页复制机器 ID → 在此粘贴并获取授权码 → 回到本地软件粘贴激活。
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('activateBtn').addEventListener('click', async () => {
+      const machineId = document.getElementById('activateMachineId').value.trim();
+      const username = document.getElementById('activateUsername').value.trim();
+      const password = document.getElementById('activatePassword').value.trim();
+      const msg = document.getElementById('activateMsg');
+      const codeBox = document.getElementById('activateCode');
+
+      msg.className = 'msg';
+      codeBox.style.display = 'none';
+
+      if (!machineId || !username || !password) {
+        msg.textContent = '请填写完整信息';
+        msg.className = 'msg error';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ machine_id: machineId, username, password })
+        });
+        const data = await res.json();
+        if (!data.ok) {
+          msg.textContent = data.error || '激活失败';
+          msg.className = 'msg error';
+          return;
+        }
+        msg.textContent = data.message || '激活成功';
+        msg.className = 'msg success';
+        codeBox.textContent = '授权码：' + data.license_code;
+        codeBox.style.display = 'block';
+      } catch (e) {
+        msg.textContent = '网络错误：' + e.message;
+        msg.className = 'msg error';
+      }
+    });
+  </script>
+</body>
+</html>

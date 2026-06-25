@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登录 - 在线授权</title>
+  <style>
+    :root {
+      --bg: #eef3f7; --panel: #ffffff; --line: #d5e1eb; --text: #162131;
+      --muted: #627487; --primary: #116fa6; --primary-dark: #0e5a88;
+      --danger: #bd2a20; --shadow: 0 18px 42px rgba(20, 43, 66, .14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh; margin: 0;
+      display: grid; place-items: center; padding: 24px;
+      color: var(--text);
+      background: linear-gradient(180deg, #eaf2f7 0, #f7fafc 280px, var(--bg) 100%);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .card {
+      width: min(100%, 400px); padding: 24px;
+      border: 1px solid var(--line); border-radius: 8px;
+      background: rgba(255,255,255,.96); box-shadow: var(--shadow);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .brand-mark {
+      width: 36px; height: 36px; display: grid; place-items: center;
+      border-radius: 8px; color: #fff; background: var(--primary); font-weight: 800;
+    }
+    h1 { margin: 0; font-size: 22px; }
+    p { margin: 8px 0 0; color: var(--muted); line-height: 1.65; }
+    label { display: grid; gap: 7px; margin-top: 16px; color: #526a7e; font-size: 13px; font-weight: 700; }
+    input {
+      width: 100%; min-height: 40px; padding: 9px 11px;
+      border: 1px solid var(--line); border-radius: 8px; font: inherit; outline: none;
+    }
+    input:focus { border-color: #78b8df; box-shadow: 0 0 0 3px rgba(17,111,166,.12); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    button {
+      width: 100%; min-height: 40px; padding: 9px 14px;
+      border: 1px solid rgba(17,111,166,.22); border-radius: 8px;
+      color: #fff; background: var(--primary); font: inherit; font-weight: 800; cursor: pointer;
+    }
+    button:hover { background: var(--primary-dark); }
+    .notice {
+      display: none; margin-top: 14px; padding: 10px 12px;
+      border-radius: 8px; line-height: 1.5;
+    }
+    .notice.error { display: block; border: 1px solid #f0b8b2; background: #fff5f4; color: var(--danger); }
+    .link { margin-top: 14px; text-align: center; font-size: 13px; color: var(--muted); }
+    .link a { color: var(--primary); text-decoration: none; font-weight: 700; }
+    .link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">影</div>
+      <div><h1>登录</h1><p>登录在线授权中心</p></div>
+    </div>
+    <label>用户名 <input type="text" id="username" placeholder="输入用户名" autocomplete="username"></label>
+    <label>密码 <input type="password" id="password" placeholder="输入密码" autocomplete="current-password"></label>
+    <div class="actions"><button id="loginBtn">登录</button></div>
+    <div id="notice" class="notice"></div>
+    <div class="link">没有账号？<a href="/register">立即注册</a></div>
+    <div class="link"><a href="/">返回首页</a></div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    async function api(url, opts={}) {
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+    $('loginBtn').addEventListener('click', async () => {
+      const username = $('username').value.trim();
+      const password = $('password').value.trim();
+      const notice = $('notice');
+      notice.className = 'notice';
+      if (!username || !password) { notice.textContent = '请输入用户名和密码'; notice.className = 'notice error'; return; }
+      try {
+        await api('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        window.location.href = '/dashboard';
+      } catch(e) {
+        notice.textContent = e.message;
+        notice.className = 'notice error';
+      }
+    });
+    $('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+  </script>
+</body>
+</html>
